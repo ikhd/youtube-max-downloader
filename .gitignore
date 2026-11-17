@@ -31,3 +31,12 @@ YouTube Downloads/
 __pycache__/
 .pytest_cache/
 node_modules/
+
+# Private review materials and the unapproved Windows trial
+.local-review/
+.windows-trial/
+*.mp4
+*.mkv
+*.webm
+*.m4a
+/YouTube-Max-Windows-Trial.zip

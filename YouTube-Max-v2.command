@@ -3,53 +3,101 @@
 # yt-dlp + FFmpeg + Deno. Downloads videos you have permission to use.
 # Quality caps, container choice, accelerated segmented downloads, safe resume.
 set -uo pipefail
-export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 
 DOWNLOAD_DIR="$HOME/Movies/YouTube Downloads"
 BOLD='\033[1m'; CYAN='\033[1;36m'; GREEN='\033[1;32m'; RED='\033[1;31m'; YELLOW='\033[1;33m'; RESET='\033[0m'
 
+if [[ ! -t 1 || -n "${NO_COLOR:-}" ]]; then
+  BOLD=''; CYAN=''; GREEN=''; RED=''; YELLOW=''; RESET=''
+fi
+
+record_file=''
+active_lock=''
+
+cleanup() {
+  if [[ -n "$record_file" ]]; then rm -f -- "$record_file"; record_file=''; fi
+  if [[ -n "$active_lock" ]]; then rm -f -- "$active_lock"; active_lock=''; fi
+}
+
 pause_if_needed() {
-  printf '\n'
-  read -r -p 'Press Enter to close...' _unused || true
+  if [[ -t 0 ]]; then read -r -p 'Press Enter to close...' _unused || true; fi
 }
 
 banner() {
-  printf "${CYAN}\n==================================================\n"
-  printf '             YouTube Max Downloader v2\n'
-  printf "==================================================${RESET}\n"
-  printf 'Downloads: %s\n' "$DOWNLOAD_DIR"
-  printf 'Select quality, format and download speed.\n'
+  printf "${CYAN}\n  YouTube Max Downloader  ${RESET}v2\n"
+  printf '  ──────────────────────────────────────────────────────────────\n'
+  printf '  Save to    ~/Movies/YouTube Downloads\n'
+  printf '  Select     Output format, video quality and download speed\n\n'
 }
+
+usage() {
+  printf '%s\n' 'Usage: YouTube-Max-v2.command [--help | --check | VIDEO_URL]' \
+    'No arguments: interactive session. VIDEO_URL: choose settings for one video.' \
+    '--check: report required and optional tools without installing anything.'
+}
+
+required_tools=(yt-dlp ffmpeg ffprobe deno)
 
 check_requirements() {
-  local missing=() program answer
-  for program in yt-dlp ffmpeg deno; do
-    command -v "$program" >/dev/null 2>&1 || missing+=("$program")
+  local missing=() packages=() answer tool
+  for tool in "${required_tools[@]}"; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+      missing+=("$tool")
+      if [[ "$tool" == ffprobe ]]; then
+        # Homebrew provides both binaries in the ffmpeg formula.
+        command -v ffmpeg >/dev/null 2>&1 && packages+=(ffmpeg)
+      else
+        packages+=("$tool")
+      fi
+    fi
   done
-  if ((${#missing[@]} == 0)); then return 0; fi
-
-  printf "${YELLOW}Missing tools: %s${RESET}\n" "${missing[*]}"
-  if ! command -v brew >/dev/null 2>&1; then
-    echo 'Homebrew not found. Install Homebrew from https://brew.sh and rerun.'
-    return 1
-  fi
-  read -r -p 'Install missing tools with Homebrew now? [y/N] ' answer || return 1
+  (( ${#missing[@]} )) || return 0
+  printf 'Missing tools: %s\n' "${missing[*]}" >&2
+  printf 'Homebrew command: brew install %s\n' "${packages[*]}" >&2
+  if [[ ! -t 0 ]] || ! command -v brew >/dev/null 2>&1; then return 1; fi
+  read -r -p 'Install these tools with Homebrew now? [y/N] ' answer || return 1
   case "$answer" in
-    y|Y|yes|YES) brew install "${missing[@]}" || return 1 ;;
-    *) echo 'Installation cancelled.'; return 1 ;;
-  esac
-  for program in yt-dlp ffmpeg deno; do
-    command -v "$program" >/dev/null 2>&1 || { echo "Still missing: $program"; return 1; }
-  done
-}
-
-is_youtube_url() {
-  # Full https URLs from common YouTube domains. A URL is always passed as one quoted argument.
-  case "$1" in
-    https://youtube.com/*|https://www.youtube.com/*|https://m.youtube.com/*|https://music.youtube.com/*|https://youtu.be/*|https://www.youtube-nocookie.com/*|https://youtube-nocookie.com/*)
-      return 0 ;;
+    y|Y|yes|YES) brew install "${packages[@]}" && tool_report ;;
     *) return 1 ;;
   esac
+}
+
+tool_report() {
+  local tool status=0
+  for tool in "${required_tools[@]}" aria2c; do
+    if command -v "$tool" >/dev/null 2>&1; then
+      printf '  %-8s  found\n' "$tool"
+    elif [[ "$tool" == aria2c ]]; then
+      printf '  %-8s  optional, absent\n' "$tool"
+    else
+      status=1
+      printf '  %-8s  missing\n' "$tool"
+    fi
+  done
+  return "$status"
+}
+
+# Only carry a single validated ID into yt-dlp. A playlist URL on its own
+# can still expand to multiple videos even when --no-playlist is present.
+youtube_id() {
+  local input="$1" rest host path query id=''
+  [[ "$input" == https://* && "$input" != *[[:space:][:cntrl:]]* && "$input" != *\\* ]] || return 1
+  rest="${input#https://}"; host="${rest%%/*}"
+  [[ "$rest" != "$host" ]] || return 1
+  path="${rest#*/}"; path="${path%%#*}"
+  query="${path#*\?}"; path="${path%%\?*}"
+  case "$host" in
+    youtu.be) id="${path%/}" ;;
+    youtube.com|www.youtube.com|m.youtube.com|music.youtube.com|youtube-nocookie.com|www.youtube-nocookie.com)
+      case "$path" in
+        watch|watch/)
+          if [[ "&$query&" =~ \&v=([A-Za-z0-9_-]{11})\& ]]; then id="${BASH_REMATCH[1]}"; fi ;;
+        shorts/*|live/*|embed/*|v/*) id="${path#*/}"; id="${id%/}" ;;
+      esac ;;
+  esac
+  [[ "$id" =~ ^[A-Za-z0-9_-]{11}$ ]] || return 1
+  printf '%s\n' "$id"
 }
 
 select_profile() {
@@ -57,7 +105,7 @@ select_profile() {
   echo
   printf "${BOLD}OUTPUT FORMAT${RESET}\n"
   echo '  1) MKV - best original quality (recommended for IINA)'
-  echo '  2) MP4 - H.264 + AAC (Apple/QuickTime compatible; may limit quality)'
+  echo '  2) MP4 - H.264 + AAC (for QuickTime; may limit quality)'
   echo '  3) MP4 - highest available quality (may not work in QuickTime)'
   echo '  4) Audio only - M4A (may convert audio when necessary)'
   while true; do
@@ -79,7 +127,7 @@ select_resolution() {
     return 0
   fi
   echo
-  printf "${BOLD}VIDEO QUALITY (maximum allowed; best available at or below it)${RESET}\n"
+  printf "${BOLD}VIDEO QUALITY (maximum source height in pixels)${RESET}\n"
   echo '  1) Maximum available (up to 8K and beyond)'
   echo '  2) 8K / 4320p'
   echo '  3) 4K / 2160p'
@@ -130,8 +178,8 @@ prepare_turbo() {
   if ! command -v aria2c >/dev/null 2>&1; then
     echo
     echo 'Turbo optionally uses aria2c for multi-connection HTTP downloads.'
-    if command -v brew >/dev/null 2>&1; then
-      read -r -p 'Install aria2 with Homebrew? [y/N] ' answer || answer=''
+    if [[ -t 0 ]] && command -v brew >/dev/null 2>&1; then
+      read -r -p 'Install aria2 with Homebrew? [y/N] ' answer || return 1
       case "$answer" in
         y|Y|yes|YES) brew install aria2 || true ;;
       esac
@@ -153,68 +201,91 @@ show_formats() {
 }
 
 run_download() {
-  local url="$1" format_rule output_template record_file result_path
+  local url="$1" format_rule output_template result_path status
+  local lock_file="$DOWNLOAD_DIR/.ytmax-locks/${url##*=}"
   local -a options
   options=(
     --ignore-config --no-playlist --no-overwrites --continue
     --remote-components ejs:npm
-    --retries 10 --fragment-retries 10 --extractor-retries 3
+    --retries 10 --fragment-retries 10 --extractor-retries 3 --abort-on-unavailable-fragments
     --concurrent-fragments "$FRAGMENTS"
-    --newline --progress-delta 1
-    --embed-metadata
+    --no-simulate --progress --newline --progress-delta 1
+    --embed-metadata --no-embed-info-json
     -P "$DOWNLOAD_DIR"
   )
 
   if [[ "$PROFILE" == 'audio' ]]; then
-    format_rule='ba[ext=m4a]/ba'
+    format_rule='ba[ext=m4a]/ba/b'
     options+=(-f "$format_rule" --extract-audio --audio-format m4a)
     output_template="%(title).160B [%(id)s] [${PROFILE_NAME}].%(ext)s"
   else
-    if [[ "$PROFILE" == 'apple' ]]; then
-      if [[ -n "$QUALITY_LIMIT" ]]; then
-        format_rule="bv[vcodec^=avc1][height<=?${QUALITY_LIMIT}]+ba[acodec^=mp4a]/b[ext=mp4][vcodec^=avc1][acodec^=mp4a][height<=?${QUALITY_LIMIT}]"
-      else
-        format_rule='bv[vcodec^=avc1]+ba[acodec^=mp4a]/b[ext=mp4][vcodec^=avc1][acodec^=mp4a]'
-      fi
-      options+=(--merge-output-format mp4 --remux-video mp4)
+    local height_filter='' container
+    if [[ -n "$QUALITY_LIMIT" ]]; then height_filter="[height<=$QUALITY_LIMIT]"; fi
+    if [[ "$PROFILE" == apple ]]; then
+      format_rule="bv[vcodec^=avc1]${height_filter}+ba[acodec^=mp4a]/b[ext=mp4][vcodec^=avc1][acodec^=mp4a]${height_filter}"
+      container=mp4
     else
-      if [[ -n "$QUALITY_LIMIT" ]]; then
-        format_rule="bv[height<=?${QUALITY_LIMIT}]+ba/b[height<=?${QUALITY_LIMIT}]"
-      else
-        format_rule='bv+ba/b'
-      fi
-      if [[ "$PROFILE" == 'mp4' ]]; then
-        options+=(--merge-output-format mp4 --remux-video mp4)
-      else
-        options+=(--merge-output-format mkv --remux-video mkv)
-      fi
+      format_rule="bv${height_filter}+ba/b${height_filter}"
+      container="$PROFILE"
     fi
+    options+=(--merge-output-format "$container" --remux-video "$container")
     options+=(-f "$format_rule")
     output_template="%(title).160B [%(id)s] [%(height)sp] [${PROFILE_NAME}].%(ext)s"
   fi
 
   if ((${#ARIA_OPTIONS[@]})); then options+=("${ARIA_OPTIONS[@]}"); fi
 
-  record_file="$(mktemp -t ytmax.XXXXXX)" || { echo 'Could not create temporary file'; return 1; }
-  printf '\n'
-  printf "${CYAN}Downloading: ${PROFILE_NAME} | ${QUALITY_LABEL} | ${FRAGMENTS} fragments${RESET}\n"
-  printf 'Note: parallel fragments only help when the source supports them.\n\n'
-
-  yt-dlp "${options[@]}" \
-    --print-to-file 'after_move:%(filepath)s' "$record_file" \
-    -o "$output_template" \
-    -- "$url"
-  local status=$?
-  if [[ $status -eq 0 ]]; then
-    printf "\n${GREEN}Finished successfully.${RESET}\n"
-    result_path="$(tail -n 1 "$record_file" 2>/dev/null || true)"
-    if [[ -n "$result_path" && -f "$result_path" ]]; then
-      printf 'File: %s\n' "$result_path"
+  mkdir -p "$DOWNLOAD_DIR/.ytmax-locks" || return 1
+  if ! shlock -f "$lock_file" -p "$$"; then
+    echo 'Could not lock this video. Check for another download or a folder permission issue.' >&2
+    return 1
+  fi
+  active_lock="$lock_file"
+  # yt-dlp may rewrite embedded metadata even with --no-overwrites. If this
+  # ID/profile is already present, resolve today's exact selected filename first.
+  local candidate selected ext
+  case "$PROFILE" in apple|mp4) ext=mp4 ;; audio) ext=m4a ;; mkv) ext=mkv ;; esac
+  result_path=''
+  for candidate in "$DOWNLOAD_DIR/"*" [${url##*=}] "*"[$PROFILE_NAME].$ext"; do
+    [[ -e "$candidate" || -L "$candidate" ]] || continue
+    selected="$(yt-dlp "${options[@]}" --simulate --quiet --no-progress \
+      --print filename -o "$output_template" -- "$url")" || { status=$?; cleanup; return "$status"; }
+    selected="${selected%.*}.$ext"
+    if [[ "${selected%/*}" == "$DOWNLOAD_DIR" && -f "$selected" && -s "$selected" && ! -L "$selected" ]]; then
+      result_path="$selected"
+    elif [[ -e "$selected" || -L "$selected" ]]; then
+      echo 'The output path is occupied. Check the download folder.' >&2
+      cleanup; return 1
     fi
-    if command -v open >/dev/null 2>&1; then
+    break
+  done
+
+  status=0
+  if [[ -n "$result_path" ]]; then
+    echo 'Already downloaded. Keeping the existing file.'
+  else
+    record_file="$(mktemp "${TMPDIR:-/tmp}/ytmax.XXXXXXXX")" || { cleanup; return 1; }
+    printf "\n${CYAN}Downloading: ${PROFILE_NAME} | ${QUALITY_LABEL} | ${FRAGMENTS} fragments${RESET}\n"
+    printf 'Note: parallel fragments only help when the source supports them.\n\n'
+
+    yt-dlp "${options[@]}" \
+      --print-to-file 'after_move:%(filepath)s' "$record_file" \
+      -o "$output_template" \
+      -- "$url"
+    status=$?
+    IFS= read -r result_path < "$record_file" || result_path=''
+  fi
+  if [[ $status -eq 0 ]]; then
+    if [[ -z "$result_path" || "${result_path%/*}" != "$DOWNLOAD_DIR" || ! -f "$result_path" || ! -s "$result_path" || -L "$result_path" ]]; then
+      echo 'No final media file could be verified in the download folder.' >&2
+      cleanup
+      return 1
+    fi
+    printf "\n${GREEN}File ready.${RESET}\n"
+    printf 'File: %s\n' "$result_path"
+    if [[ -t 0 ]] && command -v open >/dev/null 2>&1; then
       open "$DOWNLOAD_DIR" >/dev/null 2>&1 || true
-      if [[ -n "$result_path" && -f "$result_path" ]] &&
-         { [[ -d '/Applications/IINA.app' ]] || [[ -d "$HOME/Applications/IINA.app" ]]; }; then
+      if [[ -d /Applications/IINA.app || -d "$HOME/Applications/IINA.app" ]]; then
         local play_answer
         read -r -p 'Play this file in IINA now? [y/N] ' play_answer || play_answer=''
         case "$play_answer" in
@@ -224,46 +295,63 @@ run_download() {
     fi
   else
     printf "\n${RED}Download failed (code %s).${RESET}\n" "$status"
-    echo 'Try Balanced speed, or change MP4 to MKV.'
-    echo 'If the format is missing, try a lower resolution or run: brew upgrade yt-dlp ffmpeg deno'
+    echo 'For connection errors, try Balanced. For a missing codec, list formats or choose MKV.'
+    echo 'If extraction errors persist, check your yt-dlp version.'
     echo 'Some private, restricted or inaccessible videos cannot be downloaded.'
   fi
-  rm -f "$record_file"
+  cleanup
   return "$status"
 }
 
 main() {
-  local url answer
+  local url='' answer video_id status=0 session_status=0 once=0
+  if (( $# > 1 )); then usage >&2; return 2; fi
+  if (( $# == 1 )); then
+    case "$1" in
+      --help|-h) usage; return 0 ;;
+      --check) tool_report; return $? ;;
+      *) video_id="$(youtube_id "$1")" || { usage >&2; return 2; }
+         url="$1"; once=1 ;;
+    esac
+  fi
   banner
-  if ! check_requirements; then pause_if_needed; exit 1; fi
-  mkdir -p "$DOWNLOAD_DIR" || { echo 'Could not create download directory.'; pause_if_needed; exit 1; }
-  echo
+  if ! check_requirements; then pause_if_needed; return 1; fi
+  mkdir -p "$DOWNLOAD_DIR" || { echo 'Could not create download directory.'; pause_if_needed; return 1; }
   echo 'TIP: Install IINA to play MKV: brew install --cask iina'
-  echo 'Paste a YouTube URL, enter U to show update command, or press Enter to quit.'
+  if (( ! once )); then
+    echo 'Paste a YouTube video link. U shows update instructions. Enter quits.'
+  fi
   while true; do
-    printf '\n'
-    read -r -p 'YouTube URL > ' url || break
-    [[ -z "$url" ]] && break
-    case "$url" in
-      U|u) echo 'To update, run: brew upgrade yt-dlp ffmpeg deno aria2'; continue ;;
-    esac
-    if ! is_youtube_url "$url"; then
-      echo 'Invalid URL. Paste a full https://youtube.com or https://youtu.be link.'
-      continue
+    if (( ! once )); then
+      printf '\n'
+      IFS= read -r -p 'YouTube URL > ' url || break
+      [[ -n "$url" ]] || break
+      case "$url" in
+        U|u) echo 'To update: brew upgrade yt-dlp ffmpeg deno (and aria2 if installed).'; continue ;;
+      esac
+      video_id="$(youtube_id "$url")" || { echo 'Invalid URL. Use an HTTPS link to a single YouTube video.'; continue; }
     fi
+    url="https://www.youtube.com/watch?v=$video_id"
     echo
-    read -r -p 'Show all available formats first? [y/N] ' answer || break
+    read -r -p 'Show all available formats first? [y/N] ' answer || return 130
     case "$answer" in
-      y|Y|yes|YES) show_formats "$url" || echo 'Could not list formats.' ;;
+      y|Y|yes|YES) show_formats "$url" || echo 'Could not list formats.' >&2 ;;
     esac
-    select_profile || break
-    select_resolution || break
-    select_speed || break
-    prepare_turbo
-    run_download "$url" || true
+    select_profile && select_resolution && select_speed && prepare_turbo || return 130
+    status=0
+    run_download "$url" || status=$?
+    if (( once || status >= 128 )); then return "$status"; fi
+    if (( status )); then session_status=$status; fi
     printf '\nPaste another URL or press Enter to exit.\n'
   done
   printf '\nGoodbye!\n'
+  return "$session_status"
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  trap cleanup EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  trap 'exit 129' HUP
+  main "$@"
+fi

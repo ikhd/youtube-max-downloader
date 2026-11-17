@@ -1,0 +1,24 @@
+name: macOS CLI checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  cli:
+    strategy:
+      matrix:
+        os: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: false
+      - name: Check system Bash and run offline CLI tests
+        run: |
+          /bin/bash --version
+          /bin/bash -n YouTube-Max-v2.command
+          python3 tests/test_cli.py
