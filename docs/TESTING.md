@@ -68,3 +68,5 @@ The README images are screenshots of the actual Bash session rendered in xterm.j
 The owner ran the original launcher on Windows after installing Deno, yt-dlp and FFmpeg, and reached the URL prompt. Deno also printed an information message about the absent optional aria2c executable. The updated launcher checks for it before starting Deno and leaves it out of Deno's subprocess permissions.
 
 On macOS, the updated Windows TypeScript entry point passed Deno check and lint, six CLI tests using substitute executables (including a Turbo download without aria2c), and five local media integration tests using the actual macOS tools. A Windows CI job exercises the CMD launcher with mock installers for first launch, a repeat launch, optional aria2c and failed setup. The local tests did not perform a real WinGet installation.
+
+On 17 November 2026 the project owner also reported that the updated application worked on both a Windows machine and a Mac. The report did not specify a format, OS version or a clean WinGet installation.

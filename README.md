@@ -7,7 +7,7 @@
   <a href="YouTube-Max-Windows-Trial.zip?raw=true"><img src="docs/brand/windows.svg" alt="Download the Windows trial ZIP" width="174"></a>
 </p>
 
-<p align="center"><a href="README.ar.md" lang="ar">العربية</a> &nbsp;·&nbsp; <a href="docs/TESTING.md">Test results</a></p>
+<p align="center"><a href="README.ar.md" lang="ar">العربية</a> &nbsp;·&nbsp; <a href="docs/TESTING.md">Test results</a> &nbsp;·&nbsp; <a href="LICENSE">MIT License</a></p>
 
 ## 🚀 Quick start
 

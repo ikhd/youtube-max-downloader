@@ -9,7 +9,7 @@
   <a href="YouTube-Max-Windows-Trial.zip?raw=true"><img src="docs/brand/windows.svg" alt="تنزيل نسخة Windows التجريبية" width="174"></a>
 </p>
 
-<p align="center"><a href="README.md">English</a> &nbsp;·&nbsp; <a href="docs/TESTING.md">نتائج الاختبارات</a></p>
+<p align="center"><a href="README.md">English</a> &nbsp;·&nbsp; <a href="docs/TESTING.md">نتائج الاختبارات</a> &nbsp;·&nbsp; <a href="LICENSE">ترخيص MIT</a></p>
 
 ## 🚀 ابدأ على جهازك
 
