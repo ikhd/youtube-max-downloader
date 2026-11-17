@@ -1,6 +1,9 @@
 <h1 align="center"><a href="docs/brand/logo.png"><img src="docs/brand/banner.png" alt="YouTube Max Downloader" width="100%"></a></h1>
 
-<p align="center">Paste a YouTube link, pick the quality, and save the video or just the audio to your Mac or Windows PC.</p>
+<p align="center">
+  <strong><samp>Sometimes you come back for the scene. Sometimes it’s a line you want to hear again.</samp></strong><br>
+  <samp>Save the video in the quality you want, or keep just the audio!</samp>
+</p>
 
 <p align="center" dir="ltr">
   <a href="https://github.com/ikhd/youtube-max-downloader/archive/refs/heads/main.zip"><img src="docs/brand/macos.svg" alt="Download the macOS source ZIP" width="174"></a>
@@ -9,7 +12,7 @@
 
 <p align="center"><a href="README.ar.md" lang="ar">العربية</a> &nbsp;·&nbsp; <a href="docs/TESTING.md">Test results</a> &nbsp;·&nbsp; <a href="LICENSE">MIT License</a></p>
 
-## 🚀 Quick start
+## 🚀 <samp>Quick start</samp>
 
 | Platform | After you extract the ZIP | Download folder |
 | --- | --- | --- |
@@ -20,7 +23,7 @@ Both downloads work without Git. On Windows, keep <code>downloader.ts</code> bes
 
 ![The running macOS app at the URL prompt](docs/images/start.png)
 
-### Set up the Mac tools
+### <samp>Set up the Mac tools</samp>
 
 1. From the project folder in Terminal, check which tools are available. The script uses the Mac’s built-in Bash. It searches your PATH and both standard Homebrew locations.
 
@@ -42,7 +45,7 @@ Both downloads work without Git. On Windows, keep <code>downloader.ts</code> bes
 
 Optional tools are `aria2c` for direct HTTP transfers in Turbo mode (`brew install aria2`) and IINA for playback (`brew install --cask iina`). The interactive installer asks before calling Homebrew. Entering **U** at the URL prompt only prints update guidance.
 
-## 🎬 Download a video
+## 🎬 <samp>Download a video</samp>
 
 Paste an HTTPS watch, Shorts, live, embed or youtu.be link to a video you own or have permission to download. The app extracts the single video ID and discards playlist, tracking and timestamp parameters. The format-list prompt makes a network request if you answer **y**. Press **Enter** to accept a numbered menu’s default.
 
@@ -52,7 +55,7 @@ For example, to save Blender’s open film at up to 360 pixels high, run the com
 ./YouTube-Max-v2.command 'https://www.youtube.com/watch?v=aqz-KE-bpKQ'
 ```
 
-### Output format
+### <samp>Output format</samp>
 
 | Menu | File | What goes into it |
 | --- | --- | --- |
@@ -65,7 +68,7 @@ For example, to save Blender’s open film at up to 360 pixels high, run the com
 
 ![Four output profiles in the running CLI](docs/images/formats.png)
 
-### Quality and transfer settings
+### <samp>Quality and transfer settings</samp>
 
 | Video quality | Selection |
 | --- | --- |
@@ -84,7 +87,7 @@ Audio-only skips the quality menu. A quality cap filters existing streams. The a
 
 The server, protocol and connection determine actual throughput. A higher fragment count may have no benefit. [yt-dlp options](https://github.com/yt-dlp/yt-dlp#download-options) · [aria2 options](https://aria2.github.io/manual/en/html/aria2c.html)
 
-## 📁 Files, retries and playback
+## 📁 <samp>Files, retries and playback</samp>
 
 - Names include the title, video ID, profile and, for video, the selected height. The app verifies the final file before reporting success. In an interactive Terminal it opens the folder in Finder and offers playback if IINA is installed in Applications.
 - If Finder asks which app to use for MKV, choose **Open With → IINA**. To set this for future MKVs, use **Get Info → Open with → IINA → Change All**. Apple-MP4 is the QuickTime-oriented choice. [IINA](https://iina.io/)
@@ -92,7 +95,7 @@ The server, protocol and connection determine actual throughput. A higher fragme
 - If an output for that video and profile already exists, the app resolves the current selection. An exact filename match is reused without modifying its contents. Renaming a file or a change to the source title can produce a new filename. Existing files are checked for presence, not for media integrity.
 - An empty URL or end-of-input at the URL prompt exits. Ctrl-C or end-of-input during selection returns **130**. Invalid command-line arguments return **2**. A failed download produces a nonzero exit, including when quitting a multi-download session afterwards. Run `./YouTube-Max-v2.command --help` for usage.
 
-## 🛠️ Troubleshooting
+## 🛠️ <samp>Troubleshooting</samp>
 
 | Symptom | Next step |
 | --- | --- |
@@ -102,7 +105,7 @@ The server, protocol and connection determine actual throughput. A higher fragme
 | Transfer stalls or is rate limited | Retry later with Balanced. Keep partial files for the retry. |
 | A private, restricted or unavailable video fails | Use an accessible video you have permission to download. This app has no account or cookie input. |
 
-## 🔒 Privacy and verification
+## 🔒 <samp>Privacy and verification</samp>
 
 The wrapper runs locally and passes arguments directly to yt-dlp. YouTube receives network requests for listing and downloading. With `--remote-components ejs:npm`, yt-dlp may fetch executable EJS components through Deno from npm. The app ignores user yt-dlp configuration, embeds ordinary media metadata and suppresses the full info-JSON attachment. Titles and source URLs can still appear in the saved file. [Upstream EJS documentation](https://github.com/yt-dlp/yt-dlp/wiki/EJS)
 
