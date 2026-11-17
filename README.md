@@ -6,6 +6,10 @@ Save one YouTube video to your Mac. Keep the original video streams for editing 
 
 ![The macOS CLI waiting for a video link](docs/images/start.png)
 
+## Try it on Windows
+
+Download the [Windows ZIP](YouTube-Max-Windows-Trial.zip), extract the entire folder and double-click **YouTube-Max.cmd**. You can also use **Code → Download ZIP** and open the launcher inside `YouTube-Max-Windows-Trial`. Git is optional. The launcher uses WinGet to install any missing Deno, yt-dlp or FFmpeg tools and then asks for a video link. Files go to **`%USERPROFILE%\Videos\YouTube Downloads`**. Turbo uses the native downloader when optional aria2c is absent. [Windows setup and troubleshooting](YouTube-Max-Windows-Trial/README-FIRST.txt)
+
 ## Run on macOS
 
 1. From the project folder in Terminal, check which tools are available. The script uses the Mac’s built-in Bash. It searches your PATH and both standard Homebrew locations.

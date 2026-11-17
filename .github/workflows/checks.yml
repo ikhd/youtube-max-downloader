@@ -1,4 +1,4 @@
-name: macOS CLI checks
+name: Downloader checks
 
 on: [push, pull_request, workflow_dispatch]
 
@@ -22,3 +22,15 @@ jobs:
           /bin/bash --version
           /bin/bash -n YouTube-Max-v2.command
           python3 tests/test_cli.py
+
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          clean: false
+      - name: Exercise the Windows launcher with mock installers
+        shell: powershell
+        run: .\tests\windows-startup.ps1

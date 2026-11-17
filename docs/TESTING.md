@@ -62,3 +62,9 @@ One earlier repeat exposed yt-dlp rewriting MKV metadata even though the downloa
 No native Intel Mac, hosted Actions run, IINA/QuickTime playback session, sustained HLS test, live 4K/8K download or speed comparison was exercised. ShellCheck was unavailable. Only the Original-MKV profile was exercised against live YouTube. Dependency installation and upgrades were not run. The workflow is configured for offline CLI checks on Apple Silicon and Intel macOS runners.
 
 The README images are screenshots of the actual Bash session rendered in xterm.js. The screenshot session stopped in the menus before contacting its example video.
+
+## Windows trial
+
+The owner ran the original launcher on Windows after installing Deno, yt-dlp and FFmpeg, and reached the URL prompt. Deno also printed an information message about the absent optional aria2c executable. The updated launcher checks for it before starting Deno and leaves it out of Deno's subprocess permissions.
+
+On macOS, the updated Windows TypeScript entry point passed Deno check and lint, six CLI tests using substitute executables (including a Turbo download without aria2c), and five local media integration tests using the actual macOS tools. A Windows CI job exercises the CMD launcher with mock installers for first launch, a repeat launch, optional aria2c and failed setup. The local tests did not perform a real WinGet installation.

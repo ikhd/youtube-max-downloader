@@ -8,6 +8,10 @@
 
 ![شاشة البداية الفعلية في انتظار رابط الفيديو](docs/images/start.png)
 
+## تجربة النسخة على Windows
+
+نزّل [حزمة Windows](YouTube-Max-Windows-Trial.zip)، وفك ضغطها بالكامل، ثم انقر مرتين على **YouTube-Max.cmd**. ويمكنك أيضًا اختيار **Code ← Download ZIP** وفتح المشغّل داخل مجلد `YouTube-Max-Windows-Trial`. لا تحتاج إلى Git. يثبّت المشغّل الأدوات المطلوبة الناقصة تلقائيًا عبر WinGet ثم يطلب رابط الفيديو. تجد الملفات في **`%USERPROFILE%\Videos\YouTube Downloads`**. يعمل Turbo بأداة التنزيل المدمجة عند غياب aria2c الاختياري. [تعليمات Windows وحل المشكلات](YouTube-Max-Windows-Trial/README-FIRST.txt)
+
 ## التشغيل على الماك
 
 1. افتح Terminal داخل مجلد المشروع وافحص الأدوات. يستخدم السكربت Bash المرفق مع macOS، ويبحث في PATH ومساري Homebrew المعتادين على Apple Silicon وIntel.

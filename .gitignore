@@ -32,11 +32,10 @@ __pycache__/
 .pytest_cache/
 node_modules/
 
-# Private review materials and the unapproved Windows trial
+# Local review materials and staging copies
 .local-review/
 .windows-trial/
 *.mp4
 *.mkv
 *.webm
 *.m4a
-/YouTube-Max-Windows-Trial.zip
