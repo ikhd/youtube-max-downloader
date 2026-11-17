@@ -1,0 +1,33 @@
+# Local migration context — never publish
+.handoff/
+
+# OS/editor metadata
+.DS_Store
+.AppleDouble/
+Thumbs.db
+.idea/
+.vscode/
+
+# Credentials and local configuration
+.env
+.env.*
+*.pem
+*.key
+cookies*.txt
+*cookies*.json
+
+# Download output and transient state
+Downloads/
+downloads/
+YouTube Downloads/
+*.part
+*.ytdl
+*.aria2
+*.log
+*.tmp
+
+# Local tooling
+.venv/
+__pycache__/
+.pytest_cache/
+node_modules/
