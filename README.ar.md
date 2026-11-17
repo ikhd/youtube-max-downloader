@@ -2,7 +2,7 @@
 
 <h1 align="center"><a href="docs/brand/logo.png"><img src="docs/brand/banner.png" alt="YouTube Max Downloader" width="100%"></a></h1>
 
-<p align="center">احفظ الفيديو بترميز المصدر، أو اختر MP4 مناسبًا لـ QuickTime، أو استخرج الصوت في ملف M4A.</p>
+<p align="center">نزّل من يوتيوب على الماك أو الويندوز. الصق الرابط واختر جودة الفيديو، أو احفظ الصوت وحده.</p>
 
 <p align="center" dir="ltr">
   <a href="https://github.com/ikhd/youtube-max-downloader/archive/refs/heads/main.zip"><img src="docs/brand/macos.svg" alt="تنزيل ZIP للماك" width="174"></a>

@@ -1,6 +1,6 @@
 <h1 align="center"><a href="docs/brand/logo.png"><img src="docs/brand/banner.png" alt="YouTube Max Downloader" width="100%"></a></h1>
 
-<p align="center">Keep the source codecs, choose a QuickTime-friendly MP4, or save just the audio as M4A.</p>
+<p align="center">Paste a YouTube link, pick the quality, and save the video or just the audio to your Mac or Windows PC.</p>
 
 <p align="center" dir="ltr">
   <a href="https://github.com/ikhd/youtube-max-downloader/archive/refs/heads/main.zip"><img src="docs/brand/macos.svg" alt="Download the macOS source ZIP" width="174"></a>
